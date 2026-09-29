@@ -20,6 +20,9 @@ TEST_RUNNER_SPACER_INTEGRATION=1 xcodebuild test ... -only-testing:SpacerCoreTes
 
 # Build and run the app
 xcodebuild -project Spacer.xcodeproj -scheme Spacer -configuration Debug -derivedDataPath build -quiet && open build/Build/Products/Debug/Spacer.app
+
+# Signed, notarized DMG for distribution (needs Developer ID cert + notarytool profile; see script header)
+TEAM_ID=ABCDE12345 scripts/release.sh
 ```
 
 Tests use Swift Testing (`import Testing`, `@Suite`, `@Test`, `#expect`), not XCTest.
@@ -39,7 +42,7 @@ Data flow: `DesktopMonitor` (space-change notification + 2 s poll, since macOS d
 
 ## Rules / invariants
 
-- Swift 6 with default actor isolation `MainActor` in all targets; deployment target macOS 15. Not sandboxed, ad-hoc signed.
+- Swift 6 with default actor isolation `MainActor` in all targets; deployment target macOS 15. Not sandboxed (so not Mac App Store eligible); ad-hoc signed for dev, Developer ID + Hardened Runtime for release.
 - Single display only (first display from CGS).
 - Full-screen spaces (CGS `type` ≠ 0) are excluded; when one is current, no desktop is highlighted.
 - The default desktop has an empty UUID in CGS data and gets the stable id `"default"`.
