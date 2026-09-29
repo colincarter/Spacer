@@ -1,0 +1,50 @@
+name: Spacer
+options:
+  bundleIdPrefix: com.colincarter
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    GENERATE_INFOPLIST_FILE: YES
+targets:
+  SpacerCore:
+    type: framework
+    platform: macOS
+    sources: [SpacerCore]
+  SpacerCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [SpacerCoreTests]
+    dependencies:
+      - target: SpacerCore
+  Spacer:
+    type: application
+    platform: macOS
+    sources: [Spacer]
+    dependencies:
+      - target: SpacerCore
+    info:
+      path: Spacer/Info.plist
+      properties:
+        CFBundleDisplayName: Spacer
+        LSUIElement: true
+        NSHumanReadableCopyright: ""
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.colincarter.Spacer
+        GENERATE_INFOPLIST_FILE: NO
+schemes:
+  Spacer:
+    build:
+      targets:
+        Spacer: all
+    test:
+      targets:
+        - SpacerCoreTests
