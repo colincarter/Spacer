@@ -67,6 +67,9 @@ final class MenuBarController {
             menu.addItem(.separator())
         }
         menu.addItem(NSMenuItem(title: "Settings…") { [weak self] in self?.delegate?.menuBarDidRequestSettings() })
+        let launchAtLogin = NSMenuItem(title: "Launch at Login") { LoginItem.setEnabled(!LoginItem.isEnabled) }
+        launchAtLogin.state = LoginItem.isEnabled ? .on : .off
+        menu.addItem(launchAtLogin)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Spacer") { NSApp.terminate(nil) })
         NSMenu.popUpContextMenu(menu, with: event, for: rowView)

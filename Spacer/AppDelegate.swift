@@ -6,6 +6,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MenuBarControllerDeleg
     private let nameStore = NameStore()
     private lazy var monitor = DesktopMonitor(provider: provider)
     private lazy var coordinator = SwitchCoordinator(provider: provider, setupChecker: SetupChecker())
+    private lazy var settingsModel = SettingsModel(nameStore: nameStore)
+    private lazy var settingsWindow = SettingsWindowController(model: settingsModel)
     private var menuBar: MenuBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -16,15 +18,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MenuBarControllerDeleg
             }
             self?.render()
         }
+        settingsModel.onNamesChanged = { [weak self] in self?.render() }
         monitor.start()
     }
 
     private func render() {
         guard case .loaded(let desktops) = monitor.state else {
             menuBar?.showUnavailable()
+            settingsModel.desktops = []
             return
         }
         menuBar?.show(RowBuilder.items(for: desktops, name: nameStore.name(for:)))
+        settingsModel.desktops = desktops
     }
 
     // MARK: MenuBarControllerDelegate
@@ -37,7 +42,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MenuBarControllerDeleg
         }
     }
 
-    func menuBar(didRequestRename item: RowItem) {}
+    func menuBar(didRequestRename item: RowItem) {
+        let current = nameStore.name(for: item.desktop.id)
+        guard let name = Prompts.rename(desktopIndex: item.desktop.index, currentName: current) else { return }
+        nameStore.setName(name, for: item.desktop.id)
+        render()
+    }
 
-    func menuBarDidRequestSettings() {}
+    func menuBarDidRequestSettings() {
+        settingsWindow.show()
+    }
 }

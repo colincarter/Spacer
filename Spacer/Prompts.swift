@@ -3,6 +3,21 @@ import ApplicationServices
 import SpacerCore
 
 enum Prompts {
+    /// Returns the entered name, or nil if cancelled. An empty string clears the name.
+    static func rename(desktopIndex: Int, currentName: String?) -> String? {
+        NSApp.activate()
+        let alert = NSAlert()
+        alert.messageText = "Rename Desktop \(desktopIndex)"
+        alert.informativeText = "Leave empty to show the number."
+        let field = NSTextField(string: currentName ?? "")
+        field.frame = NSRect(x: 0, y: 0, width: 240, height: 24)
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        alert.window.initialFirstResponder = field
+        return alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
+    }
+
     static func setup(_ status: SetupStatus) {
         switch status {
         case .ready:
