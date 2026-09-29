@@ -47,7 +47,7 @@ Two targets:
 | `NameStore` | Core | Maps desktop UUID → name, stored in `UserDefaults`. Records a `lastSeen` date per entry; entries unseen for 30 days are pruned. |
 | `RowModel` | Core | Combines desktops + names into display items: `title`, `isCurrent`, `isSwitchable` (index ≤ 9), truncation of long titles to a shared 50-character budget (≈400 pt), minimum 3 characters each. |
 | `SetupChecker` | Core | Reports `accessibilityGranted: Bool` (`AXIsProcessTrusted`) and `shortcutsEnabled: Bool` (reads `com.apple.symbolichotkeys` entries 118–126). |
-| `MenuBarController` | App | Owns the `NSStatusItem`; renders the row from `RowModel`. Left-click → switch. Right-click → menu: Rename…, Settings…, Launch at login, Quit. |
+| `MenuBarController` | App | One `NSStatusItem` per desktop, recreated in order when the count changes (macOS 27 delivers status-item clicks at the button centre, so one item cannot host several click targets). Left-click → switch. Right-click / Control-click → menu: Rename…, Settings…, Launch at login, Quit. |
 | `SettingsWindow` | App | SwiftUI list of desktops with an editable name field for each. |
 | `SetupPrompt` | App | Alert explaining missing permission/shortcuts with a button that opens the relevant System Settings pane. |
 | Launch at login | App | `SMAppService.mainApp` register/unregister. |

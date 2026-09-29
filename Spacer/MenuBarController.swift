@@ -24,37 +24,79 @@ extension NSMenuItem {
     }
 }
 
-final class MenuBarController {
+/// One status item per desktop. macOS 27 delivers status-item clicks at the
+/// button's centre, so each desktop needs its own button to be clickable.
+final class MenuBarController: NSObject {
     private weak var delegate: MenuBarControllerDelegate?
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    private let rowView = RowView()
+    private var statusItems: [NSStatusItem] = []
+    private var items: [RowItem] = []
     private var isUnavailable = false
 
     init(delegate: MenuBarControllerDelegate) {
         self.delegate = delegate
-        statusItem.button?.addSubview(rowView)
-        rowView.onClick = { [weak self] item in self?.delegate?.menuBar(didClick: item) }
-        rowView.onRightClick = { [weak self] item, event in self?.showMenu(for: item, event: event) }
+        super.init()
     }
 
     func show(_ items: [RowItem]) {
         isUnavailable = false
-        rowView.update(items: items)
-        resize()
+        self.items = items
+        ensureStatusItemCount(items.count)
+        for (statusItem, item) in zip(statusItems, items) {
+            statusItem.button?.attributedTitle = title(for: item)
+        }
     }
 
     func showUnavailable() {
         isUnavailable = true
-        rowView.showUnavailable()
-        resize()
+        items = []
+        ensureStatusItemCount(1)
+        statusItems[0].button?.attributedTitle = NSAttributedString(string: "?")
     }
 
-    private func resize() {
-        statusItem.length = rowView.requiredWidth
-        rowView.frame = NSRect(x: 0, y: 0, width: rowView.requiredWidth, height: NSStatusBar.system.thickness)
+    /// New status items appear to the left of existing ones, so when the count
+    /// changes they are all recreated from last to first to keep 1, 2, 3 order.
+    private func ensureStatusItemCount(_ count: Int) {
+        guard statusItems.count != count else { return }
+        statusItems.forEach(NSStatusBar.system.removeStatusItem)
+        statusItems = (0..<count).reversed().map(makeStatusItem).reversed()
     }
 
-    private func showMenu(for item: RowItem?, event: NSEvent) {
+    private func makeStatusItem(slot: Int) -> NSStatusItem {
+        let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = statusItem.button {
+            button.tag = slot
+            button.target = self
+            button.action = #selector(buttonClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        }
+        return statusItem
+    }
+
+    private func title(for item: RowItem) -> NSAttributedString {
+        let size = NSFont.menuBarFont(ofSize: 0).pointSize
+        var attributes: [NSAttributedString.Key: Any] = [
+            .font: item.isCurrent ? NSFont.boldSystemFont(ofSize: size) : NSFont.menuBarFont(ofSize: 0),
+            .foregroundColor: item.isSwitchable ? NSColor.labelColor : NSColor.tertiaryLabelColor,
+        ]
+        if item.isCurrent {
+            attributes[.backgroundColor] = NSColor.labelColor.withAlphaComponent(0.25)
+            return NSAttributedString(string: " \(item.title) ", attributes: attributes)
+        }
+        return NSAttributedString(string: item.title, attributes: attributes)
+    }
+
+    @objc private func buttonClicked(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        let isMenuClick = event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true
+        let item = items.indices.contains(sender.tag) ? items[sender.tag] : nil
+        if isMenuClick || isUnavailable {
+            showMenu(for: item, from: sender.tag)
+        } else if let item {
+            delegate?.menuBar(didClick: item)
+        }
+    }
+
+    private func showMenu(for item: RowItem?, from slot: Int) {
         let menu = NSMenu()
         if isUnavailable {
             menu.addItem(disabledItem("Can't read desktops."))
@@ -72,7 +114,11 @@ final class MenuBarController {
         menu.addItem(launchAtLogin)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Spacer") { NSApp.terminate(nil) })
-        NSMenu.popUpContextMenu(menu, with: event, for: rowView)
+        guard statusItems.indices.contains(slot) else { return }
+        let statusItem = statusItems[slot]
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
     }
 
     private func disabledItem(_ title: String) -> NSMenuItem {
