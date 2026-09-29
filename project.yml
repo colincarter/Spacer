@@ -42,6 +42,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.colincarter.Spacer
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 schemes:
   Spacer:
     build:
