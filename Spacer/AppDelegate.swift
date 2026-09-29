@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MenuBarControllerDeleg
     private var menuBar: MenuBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        EditMenu.install()
         menuBar = MenuBarController(delegate: self)
         monitor.onChange = { [weak self] state in
             if case .loaded(let desktops) = state {
