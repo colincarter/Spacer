@@ -35,6 +35,7 @@ targets:
       properties:
         CFBundleDisplayName: Spacer
         LSUIElement: true
+        LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: ""
     settings:
       base:
